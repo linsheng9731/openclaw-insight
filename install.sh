@@ -152,15 +152,15 @@ fetch() {
   if has_cmd curl; then
     if [[ -n "$auth_header" ]]; then
       if $VERBOSE; then
-        curl -L -H "$auth_header" -o "$dest" "$url"
+        curl -L --connect-timeout 10 --max-time 60 -H "$auth_header" -o "$dest" "$url"
       else
-        curl -fsSL -H "$auth_header" -o "$dest" "$url"
+        curl -fsSL --connect-timeout 10 --max-time 60 -H "$auth_header" -o "$dest" "$url"
       fi
     else
       if $VERBOSE; then
-        curl -L -o "$dest" "$url"
+        curl -L --connect-timeout 10 --max-time 60 -o "$dest" "$url"
       else
-        curl -fsSL -o "$dest" "$url"
+        curl -fsSL --connect-timeout 10 --max-time 60 -o "$dest" "$url"
       fi
     fi
   else
@@ -204,9 +204,9 @@ fetch_text() {
 
   if has_cmd curl; then
     if [[ -n "$auth_header" ]]; then
-      curl -fsSL -H "$auth_header" "$url"
+      curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth_header" "$url"
     else
-      curl -fsSL "$url"
+      curl -fsSL --connect-timeout 10 --max-time 30 "$url"
     fi
   else
     if [[ -n "$auth_header" ]]; then
@@ -250,22 +250,68 @@ fi
 # ─── Resolve Version ────────────────────────────────────
 step "Resolving version"
 
+
+
 if [[ -z "$VERSION" ]]; then
   info "Fetching latest release..."
-  RELEASE_JSON=$(fetch_text "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null || echo "")
-  
-  if [[ -z "$RELEASE_JSON" ]]; then
-    warn "Could not fetch latest release, falling back to npm install"
-    install_via_npm
-    exit 0
-  fi
 
-  VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-  
-  if [[ -z "$VERSION" ]]; then
-    warn "Could not parse release version, falling back to npm install"
-    install_via_npm
-    exit 0
+  # Try up to 3 times with increasing timeout
+  RELEASE_JSON=""
+  for attempt in 1 2 3; do
+    $VERBOSE && info "Attempt $attempt/3..."
+    RELEASE_JSON=$(fetch_text "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null || echo "")
+    if [[ -n "$RELEASE_JSON" ]]; then
+      break
+    fi
+    $VERBOSE && warn "Attempt $attempt failed, retrying in ${attempt}s..."
+    sleep "$attempt"
+  done
+
+  if [[ -z "$RELEASE_JSON" ]]; then
+    warn "Could not fetch release info from GitHub API (rate limit or network issue)"
+    info "Tip: set GITHUB_TOKEN env to avoid rate limits"
+    info "Trying to resolve latest version from git tags..."
+
+    # Fallback: try to get version from git ls-remote
+    LATEST_TAG=""
+    if has_cmd git; then
+      LATEST_TAG=$(git ls-remote --tags --sort=-v:refname "https://github.com/${REPO}.git" 2>/dev/null \
+        | grep -o 'refs/tags/v[^{}]*' | head -1 | sed 's|refs/tags/||')
+    fi
+
+    if [[ -n "$LATEST_TAG" ]]; then
+      VERSION="$LATEST_TAG"
+      info "Resolved version from git tags: $VERSION"
+    else
+      # Fallback 2: resolve version from GitHub releases redirect (no API needed)
+      info "Trying redirect-based version detection..."
+      if has_cmd curl; then
+        REDIRECT_URL=$(curl -fsSI --connect-timeout 10 --max-time 15 \
+          "https://github.com/${REPO}/releases/latest" 2>/dev/null \
+          | grep -i '^location:' | tail -1 | tr -d '\r\n')
+        if [[ -n "$REDIRECT_URL" ]]; then
+          LATEST_TAG=$(echo "$REDIRECT_URL" | grep -o 'v[0-9][0-9.]*' | tail -1)
+          if [[ -n "$LATEST_TAG" ]]; then
+            VERSION="$LATEST_TAG"
+            info "Resolved version from redirect: $VERSION"
+          fi
+        fi
+      fi
+
+      if [[ -z "${VERSION:-}" ]]; then
+        warn "Could not resolve version, falling back to npm install"
+        install_via_npm
+        exit 0
+      fi
+    fi
+  else
+    VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+
+    if [[ -z "$VERSION" ]]; then
+      warn "Could not parse release version, falling back to npm install"
+      install_via_npm
+      exit 0
+    fi
   fi
 fi
 
