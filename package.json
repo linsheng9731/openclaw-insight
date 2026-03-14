@@ -1,6 +1,6 @@
 {
   "name": "openclaw-insight",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Usage analytics and improvement insights for OpenClaw — analyze your AI assistant habits and get actionable recommendations",
   "type": "module",
   "main": "dist/index.js",
