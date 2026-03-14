@@ -8,11 +8,12 @@
     "openclaw-insight": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs = require('fs'); const file = 'dist/index.js'; let content = fs.readFileSync(file, 'utf8'); if (!content.startsWith('#!/usr/bin/env node')) { content = '#!/usr/bin/env node\\n' + content; } fs.writeFileSync(file, content);\"",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "node --test dist/**/*.test.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "release": "node scripts/release.cjs"
   },
   "engines": {
     "node": ">=22.0.0"

@@ -29,20 +29,7 @@ uninstall:
 # ─── Release ─────────────────────────────────────────────
 release: clean build
 	@echo "📦 Packaging v$(VERSION)..."
-	@mkdir -p release
-	@for platform in $(PLATFORMS); do \
-		echo "  → $${platform}"; \
-		dir="release/openclaw-insight-$(VERSION)-$${platform}"; \
-		mkdir -p "$${dir}/dist"; \
-		cp -r dist/* "$${dir}/dist/"; \
-		cp package.json README.md "$${dir}/"; \
-		cd "$${dir}" && npm install --omit=dev 2>/dev/null; cd -; \
-		tar czf "release/openclaw-insight-$(VERSION)-$${platform}.tar.gz" -C release "openclaw-insight-$(VERSION)-$${platform}"; \
-		rm -rf "$${dir}"; \
-	done
-	@cd release && (sha256sum *.tar.gz 2>/dev/null || shasum -a 256 *.tar.gz) > checksums.txt
-	@echo "✔ Release artifacts in release/"
-	@ls -lh release/
+	@node scripts/release.cjs
 
 # ─── Git Tag ─────────────────────────────────────────────
 tag:

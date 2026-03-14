@@ -6,7 +6,7 @@ set -euo pipefail
 # One-click install via GitHub Releases or npm fallback
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash
 #   curl -fsSL ... | bash -s -- --version v1.2.0
 #   curl -fsSL ... | bash -s -- --npm
 # ─────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
 ${BOLD}🦞 openclaw-insight installer${RESET}
 
 ${BOLD}USAGE${RESET}
-  curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash
   curl -fsSL ... | bash -s -- [OPTIONS]
 
 ${BOLD}OPTIONS${RESET}
@@ -62,7 +62,7 @@ ${BOLD}ENVIRONMENT${RESET}
 
 ${BOLD}EXAMPLES${RESET}
   # Install latest
-  curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash
 
   # Install specific version
   curl -fsSL ... | bash -s -- --version v1.2.0
@@ -147,19 +147,52 @@ fetch() {
     auth_header="Authorization: token $GITHUB_TOKEN"
   fi
 
+  $VERBOSE && info "Fetching $url"
+
   if has_cmd curl; then
     if [[ -n "$auth_header" ]]; then
-      curl -fsSL -H "$auth_header" -o "$dest" "$url"
+      if $VERBOSE; then
+        curl -L -H "$auth_header" -o "$dest" "$url"
+      else
+        curl -fsSL -H "$auth_header" -o "$dest" "$url"
+      fi
     else
-      curl -fsSL -o "$dest" "$url"
+      if $VERBOSE; then
+        curl -L -o "$dest" "$url"
+      else
+        curl -fsSL -o "$dest" "$url"
+      fi
     fi
   else
     if [[ -n "$auth_header" ]]; then
-      wget -q --header="$auth_header" -O "$dest" "$url"
+      if $VERBOSE; then
+        wget --header="$auth_header" -O "$dest" "$url"
+      else
+        wget -q --header="$auth_header" -O "$dest" "$url"
+      fi
     else
-      wget -q -O "$dest" "$url"
+      if $VERBOSE; then
+        wget -O "$dest" "$url"
+      else
+        wget -q -O "$dest" "$url"
+      fi
     fi
   fi
+  
+  # Check if download was successful
+  if [[ $? -ne 0 ]]; then
+    $VERBOSE && error "Download failed"
+    return 1
+  fi
+  if [[ ! -f "$dest" ]]; then
+    error "File not created"
+    return 1
+  fi
+  if [[ $(stat -c %s "$dest" 2>/dev/null || stat -f %z "$dest") -eq 0 ]]; then
+    error "File is empty"
+    return 1
+  fi
+  return 0
 }
 
 fetch_text() {
@@ -249,8 +282,33 @@ TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 info "Downloading ${BOLD}${ASSET_NAME}${RESET}..."
-if ! fetch "$DOWNLOAD_URL" "$TMP_DIR/$ASSET_NAME" 2>/dev/null; then
-  warn "Binary release not found for ${PLATFORM}-${ARCH}"
+info "Download URL: ${BOLD}${DOWNLOAD_URL}${RESET}"
+
+# Debug: Check if we can reach GitHub
+if $VERBOSE; then
+  info "Testing GitHub connection..."
+  curl -I -L "https://github.com" 2>&1 || wget -S "https://github.com" 2>&1 || true
+fi
+
+if ! fetch "$DOWNLOAD_URL" "$TMP_DIR/$ASSET_NAME" 2>&1; then
+  error "Failed to download $ASSET_NAME"
+  error "Download URL: $DOWNLOAD_URL"
+  error "Check your internet connection or GitHub access"
+  if [[ "$(uname -s)" == "Linux" ]]; then
+    error "Try running with --verbose for more details"
+    error "Or manually check if the file exists at: $DOWNLOAD_URL"
+  fi
+  warn "Falling back to npm install..."
+  install_via_npm
+  exit 0
+fi
+
+if [[ ! -f "$TMP_DIR/$ASSET_NAME" || $(stat -c %s "$TMP_DIR/$ASSET_NAME" 2>/dev/null || stat -f %z "$TMP_DIR/$ASSET_NAME") -lt 1000 ]]; then
+  error "Downloaded file is invalid or empty"
+  if $VERBOSE; then
+    info "File content (first 200 bytes):"
+    head -c 200 "$TMP_DIR/$ASSET_NAME"
+  fi
   warn "Falling back to npm install..."
   install_via_npm
   exit 0
@@ -313,9 +371,18 @@ cp -r "$EXTRACTED_DIR"/* "$INSTALL_DIR"/ 2>/dev/null || {
 chmod +x "$INSTALL_DIR/dist/index.js"
 
 # Create a symlink for easier execution
-if [[ ! -L "$INSTALL_DIR/openclaw-insight" && ! -f "$INSTALL_DIR/openclaw-insight" ]]; then
-  ln -sf "$INSTALL_DIR/dist/index.js" "$INSTALL_DIR/openclaw-insight"
+# First, remove any existing symlink or file to avoid conflicts
+if [[ -L "$INSTALL_DIR/openclaw-insight" ]]; then
+  unlink "$INSTALL_DIR/openclaw-insight"
+elif [[ -f "$INSTALL_DIR/openclaw-insight" ]]; then
+  rm -f "$INSTALL_DIR/openclaw-insight"
 fi
+
+# Create new symlink to dist/index.js
+ln -sf "$INSTALL_DIR/dist/index.js" "$INSTALL_DIR/openclaw-insight"
+
+# Make sure the symlink is executable
+chmod +x "$INSTALL_DIR/openclaw-insight"
 
 success "Installed to ${BOLD}${INSTALL_DIR}${RESET}"
 
