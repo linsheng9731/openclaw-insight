@@ -11,7 +11,7 @@ set -euo pipefail
 #   curl -fsSL ... | bash -s -- --npm
 # ─────────────────────────────────────────────────────────
 
-REPO="openclaw/openclaw-insight"
+REPO="linsheng9731/openclaw-insight"
 BINARY_NAME="openclaw-insight"
 INSTALL_DIR="${OPENCLAW_INSIGHT_INSTALL_DIR:-}"
 VERSION=""
@@ -294,26 +294,30 @@ step "Installing"
 
 tar xzf "$TMP_DIR/$ASSET_NAME" -C "$TMP_DIR"
 
-# Find the binary in extracted contents
-BINARY_PATH=""
-if [[ -f "$TMP_DIR/$BINARY_NAME" ]]; then
-  BINARY_PATH="$TMP_DIR/$BINARY_NAME"
-elif [[ -f "$TMP_DIR/bin/$BINARY_NAME" ]]; then
-  BINARY_PATH="$TMP_DIR/bin/$BINARY_NAME"
-else
-  # Search for it
-  BINARY_PATH=$(find "$TMP_DIR" -name "$BINARY_NAME" -type f | head -1)
-fi
+# Find the extracted directory (should contain package.json and bin)
+EXTRACTED_DIR=$(find "$TMP_DIR" -name "openclaw-insight-*" -type d | head -1)
 
-if [[ -z "$BINARY_PATH" ]]; then
-  error "Binary not found in archive"
+if [[ -z "$EXTRACTED_DIR" ]]; then
+  error "Extracted directory not found"
   exit 1
 fi
 
-chmod +x "$BINARY_PATH"
-mv "$BINARY_PATH" "$INSTALL_DIR/$BINARY_NAME"
+# Copy all files to install directory
+info "Copying files to $INSTALL_DIR"
+cp -r "$EXTRACTED_DIR"/* "$INSTALL_DIR"/ 2>/dev/null || {
+  error "Cannot copy files to $INSTALL_DIR"
+  exit 1
+}
 
-success "Installed to ${BOLD}${INSTALL_DIR}/${BINARY_NAME}${RESET}"
+# Make sure the binary is executable
+chmod +x "$INSTALL_DIR/bin/openclaw-insight.mjs"
+
+# Create a symlink for easier execution
+if [[ ! -L "$INSTALL_DIR/openclaw-insight" && ! -f "$INSTALL_DIR/openclaw-insight" ]]; then
+  ln -sf "$INSTALL_DIR/bin/openclaw-insight.mjs" "$INSTALL_DIR/openclaw-insight"
+fi
+
+success "Installed to ${BOLD}${INSTALL_DIR}${RESET}"
 
 # ─── Verify Installation ─────────────────────────────────
 step "Verifying installation"
