@@ -8,12 +8,16 @@ Inspired by [Claude Code's `/insights` command](https://docs.anthropic.com/en/do
 
 ## Features
 
+![Summary Dashboard](./resource/summary.jpg)
+
 ### 📊 Comprehensive Usage Statistics
 - **Session metrics**: total count, daily average, activity streaks
 - **Token consumption**: input/output breakdown, cache hit rates, cost estimation
 - **Temporal analysis**: daily activity charts, peak hours identification
 - **Channel distribution**: per-channel session counts, token efficiency
 - **Model usage**: model diversity, per-model cache performance
+
+![Charts & Visualizations](./resource/charts.jpg)
 
 ### 🔍 Behavior Pattern Detection
 - **Peak Hours** — identifies your most active time ranges
@@ -22,6 +26,8 @@ Inspired by [Claude Code's `/insights` command](https://docs.anthropic.com/en/do
 - **Cache Utilization** — measures prompt caching effectiveness
 - **Model Diversity** — tracks multi-model usage patterns
 - **Tool Preferences** — ranks most-used assistant tools
+
+![Usage Patterns](./resource/usage-pattern.jpg)
 
 ### 🔥 Friction Analysis
 Automatically detects pain points across your sessions:
@@ -35,6 +41,8 @@ Automatically detects pain points across your sessions:
 | Context Overflow | Repeated context window exhaustion |
 | Single-Message Sessions | Brief interactions with high overhead |
 
+![Friction Analysis](./resource/friction-analysis.jpg)
+
 ### 💡 Actionable Improvement Suggestions
 Categorized recommendations with impact and effort ratings:
 
@@ -47,6 +55,8 @@ Categorized recommendations with impact and effort ratings:
 - **Feature Discovery** — underused OpenClaw capabilities
 - **Workflow Improvement** — conversation depth, specification clarity
 
+![Improvement Suggestions](./resource/improvement-suggestions.jpg)
+
 ### 📈 Interactive HTML Report
 Beautiful dark/light theme report with:
 - Chart.js-powered interactive visualizations
@@ -54,6 +64,8 @@ Beautiful dark/light theme report with:
 - Sortable session detail table
 - Responsive design for all screen sizes
 - **100% local** — no data uploaded anywhere
+
+![Session Detail Table](./resource/session-detail.jpg)
 
 ## Installation
 

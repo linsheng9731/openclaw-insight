@@ -5,9 +5,12 @@ description: |
   Trigger when users ask about: OpenClaw usage stats, session analytics, token consumption,
   cost estimation, friction analysis, optimization suggestions, or any request to audit/visualize
   OpenClaw session data (e.g. "show my stats", "how much am I spending on AI", "usage report").
+repository: https://github.com/linsheng9731/openclaw-insight
 ---
 
 # OpenClaw Insight — Usage Guide
+
+**Repository**: [github.com/linsheng9731/openclaw-insight](https://github.com/linsheng9731/openclaw-insight)
 
 > CLI tool that analyzes local OpenClaw session history and generates interactive reports with usage statistics, behavior patterns, friction analysis, and improvement suggestions. **100% local — no data leaves your machine.**
 
@@ -15,24 +18,33 @@ description: |
 
 ### One-Click Install (Recommended)
 
-Run the provided install script from the project root:
+Use the official one-click installation script:
 
 ```bash
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash
 ```
 
-### Via npm
+This script will automatically:
+1. Detect your operating system and architecture
+2. Download the appropriate binary release
+3. Verify the integrity of the downloaded file
+4. Install it in a suitable location ($HOME/.local/bin by default)
+5. Make the command available in your PATH
+
+### Install Specific Version
+
+To install a specific version (e.g., v1.0.0):
 
 ```bash
-npm install -g openclaw-insight
-# Or run directly
-npx openclaw-insight
+curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash -s -- --version v1.0.0
 ```
 
 ### From Source
 
+For development or if you want to build from source:
+
 ```bash
-git clone <repo-url>
+git clone https://github.com/linsheng9731/openclaw-insight.git
 cd openclaw-insight
 npm install && npm run build
 ```
