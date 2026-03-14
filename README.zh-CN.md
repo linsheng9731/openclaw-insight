@@ -72,7 +72,13 @@
 ### 一键安装（推荐）
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash
+```
+
+### 安装特定版本
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash -s -- --version v1.0.0
 ```
 
 ### 通过 npm 安装
@@ -88,7 +94,7 @@ npx openclaw-insight
 ### 从源码构建
 
 ```bash
-git clone https://github.com/openclaw/openclaw-insight.git
+git clone https://github.com/linsheng9731/openclaw-insight.git
 cd openclaw-insight
 npm install
 npm run build

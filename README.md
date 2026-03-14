@@ -72,13 +72,13 @@ Beautiful dark/light theme report with:
 ### One-Click Install (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash
 ```
 
 ### Install a Specific Version
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash -s -- --version v1.0.0
+curl -fsSL https://raw.githubusercontent.com/linsheng9731/openclaw-insight/main/install.sh | bash -s -- --version v1.0.0
 ```
 
 ### Via npm
@@ -91,7 +91,7 @@ npm install -g openclaw-insight
 npx openclaw-insight
 
 # Or clone and build from source
-git clone https://github.com/openclaw/openclaw-insight.git
+git clone https://github.com/linsheng9731/openclaw-insight.git
 cd openclaw-insight
 npm install
 npm run build
