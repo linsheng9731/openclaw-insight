@@ -1,1 +1,5 @@
-bin/
+node_modules/
+dist/
+test-data/
+*.tgz
+.DS_Store

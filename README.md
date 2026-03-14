@@ -1,5 +1,7 @@
 # 🦞 openclaw-insight
 
+**English** | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md)
+
 > Usage analytics and improvement insights for [OpenClaw](https://github.com/openclaw/openclaw) — analyze your AI assistant habits and get actionable recommendations.
 
 Inspired by [Claude Code's `/insights` command](https://docs.anthropic.com/en/docs/claude-code), `openclaw-insight` analyzes your local OpenClaw session history and generates an interactive report with usage statistics, behavior patterns, friction analysis, and improvement suggestions.
@@ -54,6 +56,20 @@ Beautiful dark/light theme report with:
 - **100% local** — no data uploaded anywhere
 
 ## Installation
+
+### One-Click Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash
+```
+
+### Install a Specific Version
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/openclaw/openclaw-insight/main/install.sh | bash -s -- --version v1.0.0
+```
+
+### Via npm
 
 ```bash
 # From npm

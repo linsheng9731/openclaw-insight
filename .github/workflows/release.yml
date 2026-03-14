@@ -1,0 +1,140 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }}-${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: x64
+            runner: ubuntu-latest
+          - os: linux
+            arch: arm64
+            runner: ubuntu-latest
+          - os: darwin
+            arch: x64
+            runner: macos-13
+          - os: darwin
+            arch: arm64
+            runner: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Create standalone binary
+        run: |
+          # Package as self-contained Node.js application
+          VERSION=${GITHUB_REF_NAME#v}
+          ASSET_NAME="openclaw-insight-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
+          
+          mkdir -p release/${ASSET_NAME}
+          cp -r dist/ release/${ASSET_NAME}/dist/
+          cp -r bin/ release/${ASSET_NAME}/bin/
+          cp package.json release/${ASSET_NAME}/
+          cp README.md release/${ASSET_NAME}/
+          
+          # Install production dependencies only
+          cd release/${ASSET_NAME}
+          npm install --omit=dev
+          
+          # Create wrapper script
+          cat > openclaw-insight <<'WRAPPER'
+          #!/usr/bin/env node
+          import('./dist/index.js');
+          WRAPPER
+          chmod +x openclaw-insight
+          
+          cd ..
+          tar czf "${ASSET_NAME}.tar.gz" "${ASSET_NAME}/"
+          
+      - name: Generate checksum
+        run: |
+          cd release
+          sha256sum *.tar.gz >> checksums.txt || shasum -a 256 *.tar.gz >> checksums.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}-${{ matrix.arch }}
+          path: release/*.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checksums-${{ matrix.os }}-${{ matrix.arch }}
+          path: release/checksums.txt
+
+  publish:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: release-*
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: checksum-parts
+          pattern: checksums-*
+          merge-multiple: true
+
+      - name: Merge checksums
+        run: |
+          cat checksum-parts/checksums.txt > checksums.txt
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/*.tar.gz
+            checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  npm-publish:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
