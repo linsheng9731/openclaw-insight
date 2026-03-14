@@ -33,9 +33,8 @@ release: clean build
 	@for platform in $(PLATFORMS); do \
 		echo "  → $${platform}"; \
 		dir="release/openclaw-insight-$(VERSION)-$${platform}"; \
-		mkdir -p "$${dir}/dist" "$${dir}/bin"; \
+		mkdir -p "$${dir}/dist"; \
 		cp -r dist/* "$${dir}/dist/"; \
-		cp bin/openclaw-insight.mjs "$${dir}/bin/"; \
 		cp package.json README.md "$${dir}/"; \
 		cd "$${dir}" && npm install --omit=dev 2>/dev/null; cd -; \
 		tar czf "release/openclaw-insight-$(VERSION)-$${platform}.tar.gz" -C release "openclaw-insight-$(VERSION)-$${platform}"; \

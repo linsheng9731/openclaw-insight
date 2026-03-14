@@ -294,7 +294,7 @@ step "Installing"
 
 tar xzf "$TMP_DIR/$ASSET_NAME" -C "$TMP_DIR"
 
-# Find the extracted directory (should contain package.json and bin)
+# Find the extracted directory (should contain package.json and dist)
 EXTRACTED_DIR=$(find "$TMP_DIR" -name "openclaw-insight-*" -type d | head -1)
 
 if [[ -z "$EXTRACTED_DIR" ]]; then
@@ -310,11 +310,11 @@ cp -r "$EXTRACTED_DIR"/* "$INSTALL_DIR"/ 2>/dev/null || {
 }
 
 # Make sure the binary is executable
-chmod +x "$INSTALL_DIR/bin/openclaw-insight.mjs"
+chmod +x "$INSTALL_DIR/dist/index.js"
 
 # Create a symlink for easier execution
 if [[ ! -L "$INSTALL_DIR/openclaw-insight" && ! -f "$INSTALL_DIR/openclaw-insight" ]]; then
-  ln -sf "$INSTALL_DIR/bin/openclaw-insight.mjs" "$INSTALL_DIR/openclaw-insight"
+  ln -sf "$INSTALL_DIR/dist/index.js" "$INSTALL_DIR/openclaw-insight"
 fi
 
 success "Installed to ${BOLD}${INSTALL_DIR}${RESET}"

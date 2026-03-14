@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "openclaw-insight": "bin/openclaw-insight.mjs"
+    "openclaw-insight": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
