@@ -23,6 +23,17 @@ import {
   pct,
 } from './utils.js';
 
+const THRESHOLDS = {
+  tokenWasteOutputRatio: 5,
+  tokenWasteMinTokens: 10_000,
+  excessiveCompactions: 3,
+  abandonedMaxMessages: 2,
+  abandonedMinTokens: 1_000,
+  underutilizedCacheMinInput: 50_000,
+  contextOverflowMinCompactions: 2,
+  contextOverflowMinTokens: 100_000,
+} as const;
+
 /**
  * Analyzer: transforms raw session data into structured insights
  */
@@ -49,7 +60,7 @@ export class UsageAnalyzer {
     const hourlyDistribution = this.computeHourlyDistribution();
     const channelStats = this.computeChannelStats();
     const modelStats = this.computeModelStats();
-    const patterns = this.detectPatterns();
+    const patterns = this.detectPatterns(hourlyDistribution, channelStats, modelStats);
     const frictions = this.detectFrictions();
 
     // Compute summary
@@ -75,6 +86,7 @@ export class UsageAnalyzer {
       periodStart,
       periodEnd,
       daysAnalyzed: this.daysBack,
+      version: '',
       summary: {
         totalSessions,
         totalMessages,
@@ -224,11 +236,12 @@ export class UsageAnalyzer {
   /**
    * Detect notable usage patterns
    */
-  private detectPatterns(): UsagePattern[] {
+  private detectPatterns(
+    hourly: HourlyDistribution[],
+    channels: ChannelStats[],
+    models: ModelStats[],
+  ): UsagePattern[] {
     const patterns: UsagePattern[] = [];
-
-    // Peak hours pattern
-    const hourly = this.computeHourlyDistribution();
     const peakHour = hourly.reduce((max, h) =>
       h.sessions > max.sessions ? h : max, hourly[0]);
     if (peakHour.sessions > 0) {
@@ -243,7 +256,6 @@ export class UsageAnalyzer {
     }
 
     // Channel preference pattern
-    const channels = this.computeChannelStats();
     if (channels.length > 1) {
       const topChannel = channels[0];
       const topPct = pct(topChannel.sessions, this.sessions.length);
@@ -282,7 +294,6 @@ export class UsageAnalyzer {
     });
 
     // Model switching pattern
-    const models = this.computeModelStats();
     if (models.length > 1) {
       patterns.push({
         type: 'model_switching',
@@ -324,7 +335,7 @@ export class UsageAnalyzer {
 
     for (const session of this.sessions) {
       // High token waste: sessions with very high output relative to input
-      if (session.outputTokens > session.inputTokens * 5 && session.totalTokens > 10000) {
+      if (session.outputTokens > session.inputTokens * THRESHOLDS.tokenWasteOutputRatio && session.totalTokens > THRESHOLDS.tokenWasteMinTokens) {
         frictions.push({
           type: 'high_token_waste',
           sessionId: session.sessionId,
@@ -333,7 +344,7 @@ export class UsageAnalyzer {
       }
 
       // Excessive compactions: hitting context limits frequently
-      if (session.compactionCount >= 3) {
+      if (session.compactionCount >= THRESHOLDS.excessiveCompactions) {
         frictions.push({
           type: 'excessive_compactions',
           sessionId: session.sessionId,
@@ -342,7 +353,7 @@ export class UsageAnalyzer {
       }
 
       // Abandoned sessions: very few messages
-      if (session.messageCount <= 2 && session.totalTokens > 1000) {
+      if (session.messageCount <= THRESHOLDS.abandonedMaxMessages && session.totalTokens > THRESHOLDS.abandonedMinTokens) {
         frictions.push({
           type: 'abandoned_session',
           sessionId: session.sessionId,
@@ -360,7 +371,7 @@ export class UsageAnalyzer {
       }
 
       // Underutilized cache
-      if (session.inputTokens > 50000 && session.cacheReadTokens === 0) {
+      if (session.inputTokens > THRESHOLDS.underutilizedCacheMinInput && session.cacheReadTokens === 0) {
         frictions.push({
           type: 'underutilized_cache',
           sessionId: session.sessionId,
@@ -369,7 +380,7 @@ export class UsageAnalyzer {
       }
 
       // Context overflow signal: high compaction + high tokens
-      if (session.compactionCount >= 2 && session.totalTokens > 100000) {
+      if (session.compactionCount >= THRESHOLDS.contextOverflowMinCompactions && session.totalTokens > THRESHOLDS.contextOverflowMinTokens) {
         frictions.push({
           type: 'context_overflow',
           sessionId: session.sessionId,

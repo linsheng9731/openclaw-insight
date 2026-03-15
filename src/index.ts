@@ -15,6 +15,7 @@ import chalk from 'chalk';
 import { resolve } from 'node:path';
 import { exec } from 'node:child_process';
 import { platform } from 'node:os';
+import { createRequire } from 'node:module';
 
 import { SessionCollector } from './collector.js';
 import { UsageAnalyzer } from './analyzer.js';
@@ -23,7 +24,6 @@ import { generateHtmlReport, generateJsonReport } from './report.js';
 import {
   resolveStateDir,
   findDefaultAgentId,
-  fileExists,
   defaultConfig,
   formatNumber,
   formatTokens,
@@ -32,6 +32,8 @@ import {
 } from './utils.js';
 import type { InsightConfig } from './types.js';
 
+const VERSION: string = createRequire(import.meta.url)('../package.json').version;
+
 // ─── CLI Definition ─────────────────────────────────────────────
 
 const program = new Command();
@@ -39,7 +41,7 @@ const program = new Command();
 program
   .name('openclaw-insight')
   .description('Usage analytics and improvement insights for OpenClaw')
-  .version('1.0.0')
+  .version(VERSION)
   .option('-d, --days <number>', 'Number of days to analyze', '30')
   .option('-m, --max-sessions <number>', 'Maximum sessions to analyze', '200')
   .option('-a, --agent <id>', 'Agent ID to analyze (default: auto-detect)')
@@ -127,6 +129,7 @@ async function main(): Promise<void> {
   
   const analyzer = new UsageAnalyzer(sessions, config.daysBack);
   const report = analyzer.generateReport();
+  report.version = VERSION;
 
   console.log(`  ${chalk.green('✔')} Detected ${chalk.bold(String(report.patterns.length))} patterns, ${chalk.bold(String(report.frictions.length))} friction events`);
 

@@ -50,7 +50,6 @@ jobs:
           
           mkdir -p release/${ASSET_NAME}
           cp -r dist/ release/${ASSET_NAME}/dist/
-          cp -r bin/ release/${ASSET_NAME}/bin/
           cp package.json release/${ASSET_NAME}/
           cp README.md release/${ASSET_NAME}/
           

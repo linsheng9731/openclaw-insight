@@ -212,6 +212,7 @@ export interface InsightReport {
   periodStart: string;
   periodEnd: string;
   daysAnalyzed: number;
+  version: string;
 
   // Summary stats
   summary: {
